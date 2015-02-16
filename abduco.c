@@ -249,6 +249,7 @@ static bool set_socket_name(struct sockaddr_un *sockaddr, const char *name) {
 	if (name[0] == '/') {
 		strncpy(sockaddr->sun_path, name, maxlen);
 		if (sockaddr->sun_path[maxlen-1]) {
+			sockaddr->sun_path[maxlen-1] = '\0';
 			errno = ENAMETOOLONG;
 			return false;
 		}
@@ -315,9 +316,9 @@ static bool create_session(const char *name, char * const argv[]) {
 			case 0: /* child = user application process */
 				close(server.socket);
 				close(server_pipe[0]);
-				fcntl(client_pipe[1], F_SETFD, FD_CLOEXEC);
-				fcntl(server_pipe[1], F_SETFD, FD_CLOEXEC);
-				execvp(argv[0], argv);
+				if (fcntl(client_pipe[1], F_SETFD, FD_CLOEXEC) == 0 &&
+				    fcntl(server_pipe[1], F_SETFD, FD_CLOEXEC) == 0)
+					execvp(argv[0], argv);
 				snprintf(errormsg, sizeof(errormsg), "server-execvp: %s: %s\n",
 						 argv[0], strerror(errno));
 				write_all(client_pipe[1], errormsg, strlen(errormsg));
@@ -346,9 +347,12 @@ static bool create_session(const char *name, char * const argv[]) {
 				chdir("/");
 			#ifdef NDEBUG
 				int fd = open("/dev/null", O_RDWR);
-				dup2(fd, 0);
-				dup2(fd, 1);
-				dup2(fd, 2);
+				if (fd != -1) {
+					dup2(fd, 0);
+					dup2(fd, 1);
+					dup2(fd, 2);
+					close(fd);
+				}
 			#endif /* NDEBUG */
 				close(client_pipe[1]);
 				close(server_pipe[1]);
