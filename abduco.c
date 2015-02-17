@@ -182,8 +182,10 @@ static bool recv_packet(int socket, Packet *pkt) {
 	ssize_t len = read_all(socket, (char*)pkt, packet_header_size());
 	if (len <= 0 || len != packet_header_size())
 		return false;
-	if (pkt->len > sizeof(pkt->u.msg))
+	if (pkt->len > sizeof(pkt->u.msg)) {
+		pkt->len = 0;
 		return false;
+	}
 	if (pkt->len > 0) {
 		len = read_all(socket, pkt->u.msg, pkt->len);
 		if (len <= 0 || len != pkt->len)
@@ -251,12 +253,11 @@ static int create_socket_dir(struct sockaddr_un *sockaddr) {
 static bool set_socket_name(struct sockaddr_un *sockaddr, const char *name) {
 	size_t maxlen = sizeof(sockaddr->sun_path);
 	if (name[0] == '/') {
-		strncpy(sockaddr->sun_path, name, maxlen);
-		if (sockaddr->sun_path[maxlen-1]) {
-			sockaddr->sun_path[maxlen-1] = '\0';
+		if (strlen(name) >= maxlen) {
 			errno = ENAMETOOLONG;
 			return false;
 		}
+		strncpy(sockaddr->sun_path, name, maxlen);
 	} else if (name[0] == '.' && (name[1] == '.' || name[1] == '/')) {
 		char buf[maxlen], *cwd = getcwd(buf, sizeof buf);
 		if (!cwd)
