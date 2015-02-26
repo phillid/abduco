@@ -38,21 +38,22 @@ static int server_create_socket(const char *name) {
 	if (fd == -1)
 		return -1;
 	socklen_t socklen = offsetof(struct sockaddr_un, sun_path) + strlen(sockaddr.sun_path) + 1;
-	mode_t mode = S_IRUSR|S_IWUSR;
-	if (fchmod(fd, mode) == -1)
-		goto error1;
-	if (bind(fd, (struct sockaddr*)&sockaddr, socklen) == -1)
-		goto error1;
-	if (fchmod(fd, mode) == -1 || chmod(sockaddr.sun_path, mode) == -1)
-		goto error2;
-	if (listen(fd, 5) == -1)
-		goto error2;
+	mode_t mask = umask(S_IXUSR|S_IRWXG|S_IRWXO);
+	int r = bind(fd, (struct sockaddr*)&sockaddr, socklen);
+	umask(mask);
+
+	if (r == -1) {
+		close(fd);
+		return -1;
+	}
+
+	if (listen(fd, 5) == -1) {
+		unlink(sockaddr.sun_path);
+		close(fd);
+		return -1;
+	}
+
 	return fd;
-error2:
-	unlink(sockaddr.sun_path);
-error1:
-	close(fd);
-	return -1;
 }
 
 static int server_set_socket_non_blocking(int sock) {

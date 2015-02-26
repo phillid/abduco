@@ -6,6 +6,8 @@ abduco - terminal session manager
 .B abduco
 .RB [ \-e
 .IR detachkey ]
+.RB [ \-r ]
+.RB [ \-f ]
 .RB \-c
 .RB name
 .RB command
@@ -14,15 +16,8 @@ abduco - terminal session manager
 .B abduco
 .RB [ \-e
 .IR detachkey ]
-.RB \-C
-.RB name
-.RB command
-.RI [ args \ ... "" ]
-.br
-.B abduco
 .RB [ \-r ]
-.RB [ \-e
-.IR detachkey ]
+.RB [ \-f ]
 .RB \-n
 .RB name
 .RB command
@@ -31,15 +26,17 @@ abduco - terminal session manager
 .B abduco
 .RB [ \-e
 .IR detachkey ]
+.RB [ \-r ]
+.RB [ \-f ]
 .RB \-A
 .RB name
 .RB command
 .RI [ args \ ... "" ]
 .br
 .B abduco
-.RB [ \-r ]
 .RB [ \-e
 .IR detachkey ]
+.RB [ \-r ]
 .RB \-a
 .RB name
 .br
@@ -60,9 +57,9 @@ is executed.
 By default all session related information is stored in
 .B $HOME/.abduco
 with
-.BR $TMPDIR/.abduco
+.BR $TMPDIR/abduco/$USER
 as a fallback and
-.BR /tmp/.abduco
+.BR /tmp/abduco/$USER
 as a last resort.
 
 However if a given session name represents either a relative or absolute path
@@ -93,13 +90,12 @@ Readonly session, i.e. user input is ignored.
 .BI \-e \ detachkey
 Set the key to detach which by default is set to CTRL+\\ i.e. ^\\ to detachkey.
 .TP
+.BI \-f
+Force creation of session when there is an already terminated session of the same name,
+after showing its exit status.
+.TP
 .BI \-c
 Create a new session and attach immediately to it.
-.TP
-.BI \-C
-Show the exit status of an already terminated session, and create a new session under the same name.
-If the session does not exist, it acts like
-.BI \-c
 .TP
 .BI \-n
 Create a new session but do not attach to it.
