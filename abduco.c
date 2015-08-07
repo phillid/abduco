@@ -545,34 +545,25 @@ static int list_session(void) {
 
 int main(int argc, char *argv[]) {
 	bool force = false;
+	int c = 0;
+	char *esc = NULL;
 	char **cmd = NULL, action = '\0';
 	server.name = basename(argv[0]);
 	gethostname(server.host+1, sizeof(server.host) - 1);
 	if (argc == 1)
 		exit(list_session());
-	for (int arg = 1; arg < argc; arg++) {
-		if (argv[arg][0] != '-') {
-			if (!server.session_name) {
-				server.session_name = argv[arg];
-				continue;
-			} else if (!cmd) {
-				cmd = &argv[arg];
-				break;
-			}
-		}
-		if (server.session_name)
-			usage();
-		switch (argv[arg][1]) {
+
+	while ((c = getopt(argc, argv, "aAcne:frv")) != -1)
+	{
+		switch (c) {
 		case 'a':
 		case 'A':
 		case 'c':
 		case 'n':
-			action = argv[arg][1];
+			action = c;
 			break;
 		case 'e':
-			if (arg + 1 >= argc)
-				usage();
-			char *esc = argv[++arg];
+			char *esc = optarg;
 			if (esc[0] == '^' && esc[1])
 				*esc = CTRL(esc[1]);
 			KEY_DETACH = *esc;
@@ -590,6 +581,17 @@ int main(int argc, char *argv[]) {
 			usage();
 		}
 	}
+
+
+	/* collect the session name if trailing args */
+	if (optind < argc)
+		server.session_name = argv[optind];
+
+
+	/* if yet more trailing arguments, they must be the command */
+	if (optind + 1 < argc)
+		cmd = &argv[optind + 1];
+
 
 	if (!cmd) {
 		cmd = (char*[]){ getenv("ABDUCO_CMD"), NULL };
